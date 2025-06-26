@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game: Pemanen Sawit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+        touch-action: none;
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+      }
+
+      #game-container {
+        background-image: url("pohonsawit.png");
+        background-size: cover;
+        background-position: center bottom;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      #player {
+        content: url("angkong.png");
+        width: 15vmin;
+        max-width: 120px;
+        height: auto;
+        position: absolute;
+        bottom: 1vmin;
+        transform: translateX(-50%);
+      }
+
+      .falling-object {
+        position: absolute;
+        width: 60px;
+        height: auto;
+      }
+
+      .overlay {
+        background-color: rgba(0, 6, 22, 0.75);
+        backdrop-filter: blur(8px);
+      }
+
+      .modal {
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
+      }
+      .loader {
+        border: 4px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 4px solid #f59e0b;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .game-button {
+        width: 44px;
+        height: 44px;
+        background-color: rgba(0, 0, 0, 0.4);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 2px solid white;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-900 flex items-center justify-center h-screen">
+    <div
+      id="game-container"
+      class="w-full h-full sm:w-full sm:max-w-2xl sm:h-[90vh] sm:max-h-[800px] sm:rounded-2xl shadow-2xl relative overflow-hidden sm:border-4 border-slate-700"
+    >
+      <!-- Audio Elements -->
+      <audio id="backsound" src="backsoundsawit.mp3" loop></audio>
+      <audio id="nambahSound" src="nambah.mp3"></audio>
+      <audio id="kurangSound" src="kurang.mp3"></audio>
+      <audio id="menangSound" src="menang.mp3"></audio>
+
+      <!-- Info Game -->
+      <div
+        class="absolute top-0 left-0 w-full p-4 flex justify-between items-center text-white z-10"
+      >
+        <h2 class="text-2xl font-bold drop-shadow-lg">
+          SKOR: <span id="score">0</span>
+        </h2>
+        <!-- 13. Menambahkan tombol pause dan suara -->
+        <div class="flex gap-2">
+          <div id="pauseButton" class="game-button">
+            <svg
+              id="pauseIcon"
+              class="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <svg
+              id="playIcon"
+              class="w-6 h-6 text-white hidden"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+          </div>
+          <div id="muteButton" class="game-button">
+            <svg
+              id="soundOnIcon"
+              class="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 5v14a1 1 0 01-1.707.707L5.586 15z"
+              ></path>
+            </svg>
+            <svg
+              id="soundOffIcon"
+              class="w-6 h-6 text-white hidden"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 5v14a1 1 0 01-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+              ></path>
+            </svg>
+          </div>
+        </div>
+        <h2 class="text-2xl font-bold drop-shadow-lg">
+          WAKTU: <span id="timer">60</span>
+        </h2>
+      </div>
+
+      <!-- Player -->
+      <img id="player" src="angkong.png" alt="Angkong" style="left: 50%" />
+
+      <!-- Layar Mulai -->
+      <div
+        id="startScreen"
+        class="overlay absolute inset-0 flex flex-col items-center justify-center z-20"
+      >
+        <h1 class="text-5xl font-bold text-white mb-4 text-center">
+          Pemanen Sawit
+        </h1>
+        <p class="text-xl text-slate-300 mb-8 text-center px-4">
+          Tangkap TBS, Hindari Kelapa!
+        </p>
+        <button
+          id="startButton"
+          class="bg-yellow-500 text-slate-900 font-bold py-3 px-8 rounded-full text-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"
+        >
+          Mulai Panen
+        </button>
+      </div>
+
+      <!-- Layar Game Over -->
+      <div
+        id="gameOverScreen"
+        class="overlay absolute inset-0 flex-col items-center justify-center z-20 hidden"
+      >
+        <h1 class="text-5xl font-bold text-white mb-4">Panen Selesai!</h1>
+        <p class="text-2xl text-slate-200 mb-2">Skor Akhir:</p>
+        <p id="finalScore" class="text-6xl font-bold text-yellow-500 mb-8">0</p>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <button
+            id="restartButton"
+            class="bg-yellow-500 text-slate-900 font-bold py-3 px-6 rounded-full text-xl shadow-lg transform hover:scale-105 transition-transform duration-300"
+          >
+            Panen Lagi
+          </button>
+          <button
+            id="infoButton"
+            class="bg-blue-500 text-white font-bold py-3 px-6 rounded-full text-xl shadow-lg transform hover:scale-105 transition-transform duration-300"
+          >
+            Info Sawit
+          </button>
+          <button
+            id="shareButton"
+            class="bg-green-500 text-white font-bold py-3 px-6 rounded-full text-xl shadow-lg transform hover:scale-105 transition-transform duration-300"
+          >
+            Bagikan Skor
+          </button>
+        </div>
+      </div>
+
+      <!-- Layar Jeda (Pause) -->
+      <div
+        id="pauseScreen"
+        class="overlay absolute inset-0 flex-col items-center justify-center z-20 hidden"
+      >
+        <h1 class="text-6xl font-bold text-white mb-4">Dijeda</h1>
+        <p class="text-xl text-slate-300">
+          Klik tombol jeda lagi untuk melanjutkan
+        </p>
+      </div>
+
+      <!-- Modal Info Sawit -->
+      <div
+        id="infoModal"
+        class="modal absolute inset-0 items-center justify-center z-30 hidden"
+      >
+        <div
+          class="bg-white rounded-2xl shadow-xl p-6 m-4 max-w-md text-center relative"
+        >
+          <button
+            id="closeInfoButton"
+            class="absolute top-2 right-3 text-3xl font-bold text-gray-500 hover:text-gray-800"
+          >
+            &times;
+          </button>
+          <h2 class="text-2xl font-bold text-slate-800 mb-4">
+            Fakta Unik Kelapa Sawit
+          </h2>
+          <div
+            id="infoContent"
+            class="text-slate-600 text-lg min-h-[100px] flex items-center justify-center"
+          >
+            <div class="loader"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Share -->
+      <div
+        id="shareModal"
+        class="modal absolute inset-0 items-center justify-center z-30 hidden"
+      >
+        <div
+          class="bg-white rounded-2xl shadow-xl p-8 m-4 max-w-md text-center relative"
+        >
+          <button
+            id="closeShareButton"
+            class="absolute top-2 right-3 text-3xl font-bold text-gray-500 hover:text-gray-800"
+          >
+            &times;
+          </button>
+          <h2 class="text-2xl font-bold text-slate-800 mb-4">
+            Bagikan Skor Anda!
+          </h2>
+          <p class="text-slate-600 mb-6">
+            Bagikan hasil panenmu ke teman-teman.
+          </p>
+          <!-- 12. Tombol share ke media sosial -->
+          <div class="flex justify-center gap-4">
+            <a
+              id="whatsappShare"
+              href="#"
+              target="_blank"
+              class="p-3 bg-green-500 rounded-full"
+            >
+              <svg
+                class="w-8 h-8 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.487 5.235 3.487 8.413 0 6.557-5.338 11.892-11.894 11.892-1.99 0-3.903-.52-5.586-1.457l-6.354 1.654zm6.838-2.016c.535.343 1.128.538 1.748.538 4.867 0 8.814-3.948 8.814-8.815 0-4.867-3.947-8.814-8.814-8.814-4.867 0-8.815 3.947-8.815 8.814 0 1.944.64 3.79 1.742 5.292l-1.072 3.912 3.92-1.06zm6.335-5.385c-.043-.116-.273-.184-.523-.312-1.124-.552-2.946-1.448-3.468-1.614-.522-.166-.902-.273-1.282.273-.38.545-.94.94-1.155 1.155-.214.214-.43.258-.78.14-.393-.133-1.374-.502-2.583-1.583-1.143-1.02-1.85-2.203-2.1-2.628-.25-.424-.043-.688.166-.902.191-.192.42-.48.6-.688.18-.213.253-.38.38-.642.127-.26.042-.48-.043-.66-.085-.18-.94-2.25-1.282-3.082-.34-.832-.688-.714-.94-.714-.25 0-.522.043-.78.043s-.688.125-1.03.455c-.34.33-.94.94-.94 2.25s.94 2.628 1.072 2.828c.13.198 1.956 3.082 4.75 4.225 2.793 1.143 2.793.78 3.315.714.522-.043 1.562-.643 1.787-1.282.226-.642.226-1.155.14-1.282z"
+                ></path>
+              </svg>
+            </a>
+            <a
+              id="instagramShare"
+              href="https://instagram.com"
+              target="_blank"
+              class="p-3 bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 rounded-full"
+            >
+              <svg
+                class="w-8 h-8 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.069-4.85.069s-3.585-.011-4.85-.069c-3.252-.149-4.771-1.664-4.919-4.919-.058-1.265-.069-1.644-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0 1.441c-3.153 0-3.502.012-4.728.068-2.84.129-4.018 1.309-4.147 4.147-.056 1.226-.067 1.575-.067 4.728s.011 3.502.067 4.728c.129 2.839 1.308 4.018 4.147 4.147 1.226.056 1.575.067 4.728.067s3.502-.011 4.728-.067c2.839-.129 4.018-1.308 4.147-4.147.056-1.226.067-1.575.067-4.728s-.011-3.502-.067-4.728c-.129-2.839-1.308-4.018-4.147-4.147-1.226-.056-1.575-.068-4.728-.068zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.442c-2.364 0-4.28-1.916-4.28-4.28s1.916-4.28 4.28-4.28 4.28 1.916 4.28 4.28-1.916 4.28-4.28 4.28zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.441 1.441 1.441 1.441-.645 1.441-1.441-.645-1.44-1.441-1.44z"
+                ></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // --- Elemen DOM ---
+      const gameContainer = document.getElementById("game-container");
+      const player = document.getElementById("player");
+      const scoreDisplay = document.getElementById("score");
+      const timerDisplay = document.getElementById("timer");
+      const startScreen = document.getElementById("startScreen");
+      const gameOverScreen = document.getElementById("gameOverScreen");
+      const startButton = document.getElementById("startButton");
+      const restartButton = document.getElementById("restartButton");
+      const finalScoreDisplay = document.getElementById("finalScore");
+      const infoButton = document.getElementById("infoButton");
+      const shareButton = document.getElementById("shareButton");
+      const infoModal = document.getElementById("infoModal");
+      const shareModal = document.getElementById("shareModal");
+      const closeInfoButton = document.getElementById("closeInfoButton");
+      const closeShareButton = document.getElementById("closeShareButton");
+      const infoContent = document.getElementById("infoContent");
+      const whatsappShare = document.getElementById("whatsappShare");
+      const instagramShare = document.getElementById("instagramShare");
+      const pauseButton = document.getElementById("pauseButton");
+      const muteButton = document.getElementById("muteButton");
+      const pauseIcon = document.getElementById("pauseIcon");
+      const playIcon = document.getElementById("playIcon");
+      const soundOnIcon = document.getElementById("soundOnIcon");
+      const soundOffIcon = document.getElementById("soundOffIcon");
+      const pauseScreen = document.getElementById("pauseScreen");
+
+      // --- Audio ---
+      const backsound = document.getElementById("backsound");
+      const nambahSound = document.getElementById("nambahSound");
+      const kurangSound = document.getElementById("kurangSound");
+      const menangSound = document.getElementById("menangSound");
+
+      // --- Status Game ---
+      let score, timeLeft, gameLoop, objectInterval, timerInterval;
+      let isPlaying = false;
+      let isPaused = false;
+      let isMuted = false;
+      let fallingObjects = [];
+
+      function playSound(sound) {
+        if (isMuted) return;
+        sound.currentTime = 0;
+        const promise = sound.play();
+        if (promise !== undefined) {
+          promise.catch((error) =>
+            console.error("Audio playback failed:", error)
+          );
+        }
+      }
+
+      // --- Fungsi Utama ---
+      function startGame() {
+        score = 0;
+        timeLeft = 5;
+        isPlaying = true;
+        isPaused = false;
+        fallingObjects.forEach((obj) => obj.element.remove());
+        fallingObjects = [];
+
+        scoreDisplay.textContent = score;
+        timerDisplay.textContent = timeLeft;
+        startScreen.classList.add("hidden");
+        gameOverScreen.classList.add("hidden");
+        infoModal.classList.add("hidden");
+        shareModal.classList.add("hidden");
+        pauseScreen.classList.add("hidden");
+
+        if (!isMuted) {
+          backsound.currentTime = 0;
+          backsound.play().catch((e) => console.error("Backsound failed:", e));
+        }
+
+        timerInterval = setInterval(updateTimer, 1000);
+        objectInterval = setInterval(createFallingObject, 700);
+        gameLoop = requestAnimationFrame(gameEngine);
+      }
+
+      function endGame() {
+        isPlaying = false;
+        backsound.pause();
+        playSound(menangSound);
+
+        clearInterval(objectInterval);
+        clearInterval(timerInterval);
+        cancelAnimationFrame(gameLoop);
+
+        finalScoreDisplay.textContent = score;
+        gameOverScreen.style.display = "flex";
+      }
+
+      function updateTimer() {
+        if (!isPlaying || isPaused) return;
+        timeLeft--;
+        timerDisplay.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }
+
+      function createFallingObject() {
+        if (!isPlaying || isPaused) return;
+
+        const element = document.createElement("img");
+        element.className = "falling-object";
+
+        const typeRoll = Math.random();
+        let objectData;
+
+        if (typeRoll < 0.65) {
+          element.src = "tbs.png";
+          objectData = { points: 10, sound: nambahSound };
+        } else {
+          element.src = "kelapa.png";
+          objectData = { points: -10, sound: kurangSound };
+        }
+
+        objectData.element = element;
+        objectData.x = Math.random() * (gameContainer.clientWidth - 60);
+        objectData.y = -60;
+        objectData.speed = Math.random() * 2 + 2.5;
+
+        element.style.left = `${objectData.x}px`;
+        element.style.top = `${objectData.y}px`;
+
+        fallingObjects.push(objectData);
+        gameContainer.appendChild(element);
+      }
+
+      function gameEngine() {
+        if (!isPlaying) return;
+
+        if (!isPaused) {
+          const playerRect = player.getBoundingClientRect();
+
+          for (let i = fallingObjects.length - 1; i >= 0; i--) {
+            const obj = fallingObjects[i];
+            obj.y += obj.speed;
+            obj.element.style.top = `${obj.y}px`;
+
+            const objRect = obj.element.getBoundingClientRect();
+            if (
+              objRect.bottom > playerRect.top &&
+              objRect.top < playerRect.bottom &&
+              objRect.right > playerRect.left &&
+              objRect.left < playerRect.right
+            ) {
+              score += obj.points;
+              scoreDisplay.textContent = score;
+              playSound(obj.sound);
+              obj.element.remove();
+              fallingObjects.splice(i, 1);
+              continue;
+            }
+
+            if (obj.y > gameContainer.clientHeight) {
+              obj.element.remove();
+              fallingObjects.splice(i, 1);
+            }
+          }
+        }
+
+        gameLoop = requestAnimationFrame(gameEngine);
+      }
+
+      function movePlayer(clientX) {
+        if (!isPlaying || isPaused) return;
+        const containerRect = gameContainer.getBoundingClientRect();
+        let newLeft = clientX - containerRect.left;
+
+        if (newLeft < player.width / 2) newLeft = player.width / 2;
+        if (newLeft > containerRect.width - player.width / 2) {
+          newLeft = containerRect.width - player.width / 2;
+        }
+        player.style.left = `${newLeft}px`;
+      }
+
+      // --- Kontrol In-Game (Pause & Mute) ---
+      function togglePause() {
+        if (!isPlaying) return;
+        isPaused = !isPaused;
+        if (isPaused) {
+          backsound.pause();
+          pauseScreen.style.display = "flex";
+          pauseIcon.classList.add("hidden");
+          playIcon.classList.remove("hidden");
+        } else {
+          if (!isMuted) backsound.play();
+          pauseScreen.style.display = "none";
+          pauseIcon.classList.remove("hidden");
+          playIcon.classList.add("hidden");
+        }
+      }
+
+      function toggleMute() {
+        isMuted = !isMuted;
+        if (isMuted) {
+          backsound.pause();
+          soundOnIcon.classList.add("hidden");
+          soundOffIcon.classList.remove("hidden");
+        } else {
+          if (isPlaying && !isPaused) backsound.play();
+          soundOnIcon.classList.remove("hidden");
+          soundOffIcon.classList.add("hidden");
+        }
+      }
+
+      // --- Fitur Baru (Info & Share) ---
+      async function fetchPalmOilFact() {
+        infoModal.style.display = "flex";
+        infoContent.innerHTML = '<div class="loader"></div>';
+
+        const prompt =
+          "Berikan satu fakta unik dan mengejutkan tentang kelapa sawit dalam bahasa Indonesia. Fakta harus singkat (1-2 kalimat) dan mudah dimengerti.";
+        const apiKey = "AIzaSyC3LrCRy1ULHXhpPy0kbNczJQKmlYVCcOc"; // API key akan ditambahkan oleh sistem
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const fallbackFact =
+          "TBS yang terlalu matang (brondolan >10 buah) justru bisa menurunkan rendemen minyak hingga tinggi kadar asam lemak bebas, sehingga hasil CPO jadi lebih rendah meski jumlah buah banyak.";
+
+        try {
+          // 11. Timeout jika API tidak merespon (misal: di server lokal)
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 detik timeout
+
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+            }),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok)
+            throw new Error(
+              `API request failed with status ${response.status}`
+            );
+
+          const result = await response.json();
+
+          if (result.candidates && result.candidates[0]?.content.parts[0]) {
+            const factText = result.candidates[0].content.parts[0].text;
+            infoContent.innerHTML = `<p>${factText.replace(/\*/g, "")}</p>`;
+          } else {
+            throw new Error("Struktur respons tidak valid dari API.");
+          }
+        } catch (error) {
+          console.error("Error fetching fact (or timeout):", error);
+          // 11. Tampilkan info fallback jika gagal
+          infoContent.innerHTML = `<p>${fallbackFact}</p>`;
+        }
+      }
+
+      function setupShareLinks() {
+        const shareText = encodeURIComponent(
+          `Saya mendapatkan skor ${score} di game Pemanen Sawit! Ayo mainkan juga!`
+        );
+        whatsappShare.href = `https://api.whatsapp.com/send?text=${shareText}`;
+        // Instagram & TikTok tidak memiliki URL scheme untuk share, jadi kita hanya membuka halaman utama mereka.
+        // Pengguna disarankan untuk mengambil screenshot dan membagikannya secara manual.
+        shareModal.style.display = "flex";
+      }
+
+      // --- Event Listeners ---
+      gameContainer.addEventListener("mousemove", (e) => movePlayer(e.clientX));
+      gameContainer.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        if (e.touches[0]) movePlayer(e.touches[0].clientX);
+      });
+
+      startButton.addEventListener("click", startGame);
+      restartButton.addEventListener("click", startGame);
+      infoButton.addEventListener("click", fetchPalmOilFact);
+      shareButton.addEventListener("click", setupShareLinks);
+      closeInfoButton.addEventListener(
+        "click",
+        () => (infoModal.style.display = "none")
+      );
+      closeShareButton.addEventListener(
+        "click",
+        () => (shareModal.style.display = "none")
+      );
+      pauseButton.addEventListener("click", togglePause);
+      muteButton.addEventListener("click", toggleMute);
+    </script>
+  </body>
+</html>
