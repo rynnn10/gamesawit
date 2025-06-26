@@ -637,78 +637,125 @@
         }
       }
 
+      // --- FUNGSI BARU UNTUK MENYALIN TEKS ---
+      function copyCaption(score) {
+        // Teks caption yang ingin disalin
+        const captionText = `Wow, skorku ${score} janjang! Ayo kalahkan skorku di game Pemanen Sawit!\n\nMainkan di sini:\nhttps://tr.ee/_OqPvjohrP`; // <-- PASTIKAN LINK INI SUDAH BENAR
+
+        // Menggunakan Clipboard API untuk menyalin teks
+        navigator.clipboard
+          .writeText(captionText)
+          .then(() => {
+            // Memberi notifikasi bahwa teks berhasil disalin
+            const feedbackElement = document.getElementById("copy-feedback");
+            if (feedbackElement) {
+              feedbackElement.textContent = "Caption disalin!";
+              // Menghilangkan notifikasi setelah beberapa detik
+              setTimeout(() => {
+                feedbackElement.textContent = "";
+              }, 2000);
+            }
+          })
+          .catch((err) => {
+            console.error("Gagal menyalin teks: ", err);
+            const feedbackElement = document.getElementById("copy-feedback");
+            if (feedbackElement) {
+              feedbackElement.textContent = "Gagal menyalin.";
+            }
+          });
+      }
+
+      // --- FUNGSI SHARE DENGAN FONT SKOR ADAPTIF ---
       function generateAndShareScore() {
         shareModal.style.display = "flex";
         shareContent.innerHTML = '<div class="loader"></div>';
 
         const scoreCard = document.createElement("div");
-
-        // --- PERUBAHAN UTAMA DI SINI ---
-
-        // 1. Mengatur style untuk kartu skor (scoreCard)
-        scoreCard.style.width = "480px"; // Dimensi lanskap (lebar)
-        scoreCard.style.height = "270px"; // Dimensi lanskap (tinggi)
-        scoreCard.style.backgroundImage = "url('ltrskorshare.png')"; // Menggunakan gambar Anda sebagai latar
-        scoreCard.style.backgroundSize = "cover"; // Memastikan gambar menutupi seluruh area
-        scoreCard.style.backgroundPosition = "center"; // Memusatkan gambar
-        scoreCard.style.textShadow = "1px 1px 4px rgba(255, 255, 255, 0.7)"; // Bayangan teks agar lebih terbaca
-
-        // 2. Mengatur kelas untuk layout dan warna teks
-        //    - Mengubah 'text-white' menjadi 'text-slate-800' (teks gelap) agar kontras dengan latar
-        //    - Menambahkan flexbox untuk menata konten di tengah secara vertikal dan horizontal
+        scoreCard.style.width = "480px";
+        scoreCard.style.height = "270px";
+        scoreCard.style.backgroundImage = "url('ltrskorshare.png')";
+        scoreCard.style.backgroundSize = "cover";
+        scoreCard.style.backgroundPosition = "center";
+        scoreCard.style.textShadow = "2px 2px 8px rgba(0, 0, 0, 0.8)";
         scoreCard.className =
-          "p-4 rounded-lg text-slate-800 text-center flex flex-col items-center justify-center";
+          "p-4 rounded-lg text-white text-center flex flex-col items-center justify-center";
+
+        // --- LOGIKA BARU: UKURAN FONT SKOR ADAPTIF ---
+        // Cek panjang angka skor untuk menentukan kelas ukuran font
+        const scoreLength = score.toString().length;
+        let scoreFontSizeClass;
+
+        if (scoreLength <= 3) {
+          // Untuk skor seperti 10, 90, -10, 100, -90
+          scoreFontSizeClass = "text-7xl";
+        } else if (scoreLength === 4) {
+          // Untuk skor seperti 1000, -150, 9999
+          scoreFontSizeClass = "text-6xl";
+        } else {
+          // Untuk skor yang lebih panjang lagi
+          scoreFontSizeClass = "text-5xl";
+        }
+        // --- AKHIR DARI LOGIKA BARU ---
 
         scoreCard.innerHTML = `
-        <h3 class="text-3xl font-bold">Hasil Panen!</h3>
-        <div class="flex items-baseline justify-center gap-2">
-          <p class="text-7xl font-bold my-2">${score}</p>
-          <p class="text-3xl font-medium">Janjang</p>
-        </div>
-        <p class="text-xl mt-2">Ayo mainkan Game Pemanen Sawit!</p>
-      `;
+          <h3 class="text-3xl font-bold">Hasil Panen!</h3>
+          <div class="flex items-baseline justify-center gap-2">
+            
+            <p class="${scoreFontSizeClass} font-bold my-2">${score}</p>
+            
+            <p class="text-3xl font-medium">Janjang</p>
+          </div>
+          <p class="text-xl mt-2">Ayo mainkan Game Pemanen Sawit!</p>
+        `;
 
-        // Render off-screen (tidak ada perubahan di bagian ini)
         scoreCard.style.position = "absolute";
         scoreCard.style.left = "-9999px";
         document.body.appendChild(scoreCard);
 
         html2canvas(scoreCard, { useCORS: true, allowTaint: true })
           .then((canvas) => {
-            document.body.removeChild(scoreCard); // Hapus elemen temporer
+            document.body.removeChild(scoreCard);
             canvas.toBlob(async (blob) => {
               const file = new File([blob], "skor-panen-sawit.png", {
                 type: "image/png",
               });
 
-              // --- INILAH BAGIAN YANG DIPERBAIKI ---
-              // Ini adalah cara yang paling didukung oleh WhatsApp dan aplikasi lain
               const shareData = {
                 title: "Skor Pemanen Sawit",
-                // Teks disederhanakan untuk caption singkat
-                text: `Wow, skorku di Game Pemanen Sawit: ${score} janjang!`,
-                // Link game dipindahkan ke properti 'url' agar lebih diutamakan
-                url: "https://rynnn10.github.io/gamesawit/", // <-- GANTI DENGAN LINK GAME ANDA
-                files: [file], // Gambar skor tetap dilampirkan
+                files: [file],
               };
 
-              if (navigator.canShare && navigator.canShare(shareData)) {
-                try {
-                  await navigator.share(shareData);
-                  shareContent.innerHTML = "<p>Skor berhasil dibagikan!</p>";
-                } catch (err) {
-                  console.error("Share failed:", err);
-                  shareContent.innerHTML =
-                    '<p class="text-red-500">Batal membagikan.</p>';
-                }
-              } else {
-                const imageUrl = URL.createObjectURL(blob);
-                shareContent.innerHTML = `
-                <p class="mb-4">Browser Anda tidak mendukung share langsung. Silakan download gambar dan bagikan secara manual.</p>
+              const imageUrl = URL.createObjectURL(blob);
+              shareContent.innerHTML = `
+                <p class="mb-2 font-bold text-lg">Bagikan Hasil Panen Anda!</p>
                 <img src="${imageUrl}" alt="Skor ${score}" class="rounded-lg mb-4 w-full max-w-sm"/>
-                <a href="${imageUrl}" download="skor-panen-sawit.png" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-full">Download Gambar</a>
+                
+                <div class="w-full flex flex-col gap-3">
+                  <button id="shareImageBtn" class="w-full bg-green-500 text-white font-bold py-3 px-6 rounded-full text-lg">
+                    1. Bagikan Gambar ke WhatsApp
+                  </button>
+                  
+                  <button onclick="copyCaption(${score})" class="w-full bg-blue-500 text-white font-bold py-3 px-6 rounded-full text-lg">
+                    2. Salin Caption & Link
+                  </button>
+                  <p id="copy-feedback" class="text-sm h-4 text-green-400"></p>
+                </div>
               `;
-              }
+
+              document
+                .getElementById("shareImageBtn")
+                .addEventListener("click", async () => {
+                  if (navigator.canShare && navigator.canShare(shareData)) {
+                    try {
+                      await navigator.share(shareData);
+                    } catch (err) {
+                      console.error("Share failed:", err);
+                      alert("Gagal membagikan gambar.");
+                    }
+                  } else {
+                    alert("Browser Anda tidak mendukung fitur bagikan gambar.");
+                  }
+                });
             }, "image/png");
           })
           .catch((err) => {
