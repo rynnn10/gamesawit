@@ -681,11 +681,15 @@
                 type: "image/png",
               });
 
-              // 3. Menambahkan teks promosi dan link game pada data yang akan dibagikan
+              // --- INILAH BAGIAN YANG DIPERBAIKI ---
+              // Ini adalah cara yang paling didukung oleh WhatsApp dan aplikasi lain
               const shareData = {
                 title: "Skor Pemanen Sawit",
-                text: `Wow, skorku ${score} janjang! Ayo kalahkan skorku di game Pemanen Sawit!\n\nMainkan di sini:\nhttps://rynnn10.github.io/gamesawit/`, // <-- GANTI DENGAN LINK GAME ANDA
-                files: [file],
+                // Teks disederhanakan untuk caption singkat
+                text: `Wow, skorku di Game Pemanen Sawit: ${score} janjang!`,
+                // Link game dipindahkan ke properti 'url' agar lebih diutamakan
+                url: "https://rynnn10.github.io/gamesawit/", // <-- GANTI DENGAN LINK GAME ANDA
+                files: [file], // Gambar skor tetap dilampirkan
               };
 
               if (navigator.canShare && navigator.canShare(shareData)) {
