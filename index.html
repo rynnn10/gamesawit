@@ -440,7 +440,7 @@
       // --- Fungsi Utama ---
       function startGame() {
         score = 0;
-        timeLeft = 60;
+        timeLeft = 5;
         isPlaying = true;
         isPaused = false;
         fallingObjects.forEach((obj) => obj.element.remove());
@@ -642,33 +642,56 @@
         shareContent.innerHTML = '<div class="loader"></div>';
 
         const scoreCard = document.createElement("div");
-        scoreCard.className = "p-4 rounded-lg text-white text-center";
-        scoreCard.style.width = "300px";
-        scoreCard.style.background =
-          "linear-gradient(135deg, #f59e0b, #ec4899)";
-        scoreCard.innerHTML = `<h3 class="text-2xl font-bold">Hasil Panen!</h3><p class="text-6xl font-bold my-4">${score}</p><p class="text-lg">Mainkan Game Pemanen Sawit!</p>`;
 
-        // Render off-screen
+        // --- PERUBAHAN UTAMA DI SINI ---
+
+        // 1. Mengatur style untuk kartu skor (scoreCard)
+        scoreCard.style.width = "480px"; // Dimensi lanskap (lebar)
+        scoreCard.style.height = "270px"; // Dimensi lanskap (tinggi)
+        scoreCard.style.backgroundImage = "url('ltrskorshare.png')"; // Menggunakan gambar Anda sebagai latar
+        scoreCard.style.backgroundSize = "cover"; // Memastikan gambar menutupi seluruh area
+        scoreCard.style.backgroundPosition = "center"; // Memusatkan gambar
+        scoreCard.style.textShadow = "1px 1px 4px rgba(255, 255, 255, 0.7)"; // Bayangan teks agar lebih terbaca
+
+        // 2. Mengatur kelas untuk layout dan warna teks
+        //    - Mengubah 'text-white' menjadi 'text-slate-800' (teks gelap) agar kontras dengan latar
+        //    - Menambahkan flexbox untuk menata konten di tengah secara vertikal dan horizontal
+        scoreCard.className =
+          "p-4 rounded-lg text-slate-800 text-center flex flex-col items-center justify-center";
+
+        scoreCard.innerHTML = `
+        <h3 class="text-3xl font-bold">Hasil Panen!</h3>
+        <div class="flex items-baseline justify-center gap-2">
+          <p class="text-7xl font-bold my-2">${score}</p>
+          <p class="text-3xl font-medium">Janjang</p>
+        </div>
+        <p class="text-xl mt-2">Ayo mainkan Game Pemanen Sawit!</p>
+      `;
+
+        // Render off-screen (tidak ada perubahan di bagian ini)
         scoreCard.style.position = "absolute";
         scoreCard.style.left = "-9999px";
         document.body.appendChild(scoreCard);
 
-        html2canvas(scoreCard, { useCORS: true })
+        html2canvas(scoreCard, { useCORS: true, allowTaint: true })
           .then((canvas) => {
             document.body.removeChild(scoreCard); // Hapus elemen temporer
             canvas.toBlob(async (blob) => {
-              const file = new File([blob], "skor-panen.png", {
+              const file = new File([blob], "skor-panen-sawit.png", {
                 type: "image/png",
               });
+
+              // 3. Menambahkan teks promosi dan link game pada data yang akan dibagikan
               const shareData = {
                 title: "Skor Pemanen Sawit",
-                text: `Wow, skorku ${score}! Ayo kalahkan skorku di game Pemanen Sawit!`,
+                text: `Wow, skorku ${score} janjang! Ayo kalahkan skorku di game Pemanen Sawit!\n\nMainkan di sini:\nhttps://rynnn10.github.io/gamesawit/`, // <-- GANTI DENGAN LINK GAME ANDA
                 files: [file],
               };
+
               if (navigator.canShare && navigator.canShare(shareData)) {
                 try {
                   await navigator.share(shareData);
-                  shareContent.innerHTML = "<p>Skor dibagikan!</p>";
+                  shareContent.innerHTML = "<p>Skor berhasil dibagikan!</p>";
                 } catch (err) {
                   console.error("Share failed:", err);
                   shareContent.innerHTML =
@@ -677,10 +700,10 @@
               } else {
                 const imageUrl = URL.createObjectURL(blob);
                 shareContent.innerHTML = `
-                            <p class="mb-4">Browser Anda tidak mendukung share langsung. Silakan download gambar dan bagikan secara manual.</p>
-                            <img src="${imageUrl}" alt="Skor ${score}" class="rounded-lg mb-4"/>
-                            <a href="${imageUrl}" download="skor-panen-sawit.png" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-full">Download Gambar</a>
-                        `;
+                <p class="mb-4">Browser Anda tidak mendukung share langsung. Silakan download gambar dan bagikan secara manual.</p>
+                <img src="${imageUrl}" alt="Skor ${score}" class="rounded-lg mb-4 w-full max-w-sm"/>
+                <a href="${imageUrl}" download="skor-panen-sawit.png" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-full">Download Gambar</a>
+              `;
               }
             }, "image/png");
           })
