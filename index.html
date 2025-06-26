@@ -440,7 +440,7 @@
       // --- Fungsi Utama ---
       function startGame() {
         score = 0;
-        timeLeft = 5;
+        timeLeft = 60;
         isPlaying = true;
         isPaused = false;
         fallingObjects.forEach((obj) => obj.element.remove());
@@ -665,7 +665,7 @@
           });
       }
 
-      // --- FUNGSI SHARE DENGAN FONT SKOR ADAPTIF ---
+      // --- FUNGSI SHARE YANG DIPERBARUI TOTAL ---
       function generateAndShareScore() {
         shareModal.style.display = "flex";
         shareContent.innerHTML = '<div class="loader"></div>';
@@ -676,33 +676,20 @@
         scoreCard.style.backgroundImage = "url('ltrskorshare.png')";
         scoreCard.style.backgroundSize = "cover";
         scoreCard.style.backgroundPosition = "center";
+
+        // --- PERUBAHAN DI SINI ---
+        // 1. Mengubah warna text-shadow menjadi lebih gelap dan kuat
+        //    agar teks putih lebih menonjol dan terbaca jelas.
         scoreCard.style.textShadow = "2px 2px 8px rgba(0, 0, 0, 0.8)";
+
+        // 2. Mengganti kelas 'text-slate-800' (teks hitam) menjadi 'text-white'
         scoreCard.className =
           "p-4 rounded-lg text-white text-center flex flex-col items-center justify-center";
-
-        // --- LOGIKA BARU: UKURAN FONT SKOR ADAPTIF ---
-        // Cek panjang angka skor untuk menentukan kelas ukuran font
-        const scoreLength = score.toString().length;
-        let scoreFontSizeClass;
-
-        if (scoreLength <= 3) {
-          // Untuk skor seperti 10, 90, -10, 100, -90
-          scoreFontSizeClass = "text-7xl";
-        } else if (scoreLength === 4) {
-          // Untuk skor seperti 1000, -150, 9999
-          scoreFontSizeClass = "text-6xl";
-        } else {
-          // Untuk skor yang lebih panjang lagi
-          scoreFontSizeClass = "text-5xl";
-        }
-        // --- AKHIR DARI LOGIKA BARU ---
 
         scoreCard.innerHTML = `
           <h3 class="text-3xl font-bold">Hasil Panen!</h3>
           <div class="flex items-baseline justify-center gap-2">
-            
-            <p class="${scoreFontSizeClass} font-bold my-2">${score}</p>
-            
+            <p class="text-7xl font-bold my-2">${score}</p>
             <p class="text-3xl font-medium">Janjang</p>
           </div>
           <p class="text-xl mt-2">Ayo mainkan Game Pemanen Sawit!</p>
@@ -722,9 +709,10 @@
 
               const shareData = {
                 title: "Skor Pemanen Sawit",
-                files: [file],
+                files: [file], // Kita hanya akan mencoba mengirim file saja
               };
 
+              // Menyiapkan tampilan di dalam modal share
               const imageUrl = URL.createObjectURL(blob);
               shareContent.innerHTML = `
                 <p class="mb-2 font-bold text-lg">Bagikan Hasil Panen Anda!</p>
@@ -742,6 +730,7 @@
                 </div>
               `;
 
+              // Menambahkan event listener untuk tombol share yang baru dibuat
               document
                 .getElementById("shareImageBtn")
                 .addEventListener("click", async () => {
