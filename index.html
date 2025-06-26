@@ -38,10 +38,9 @@
 
       #player {
         content: url("angkong.png");
-        width: 120px;
-        height: auto;
+        width: 120px; /* Ukuran relatif terhadap viewport */
         position: absolute;
-        bottom: 70px;
+        bottom: 15vh; /* Posisi dari bawah menggunakan viewport height */
         transform: translateX(-50%);
       }
 
@@ -715,20 +714,22 @@
       pauseButtonInOverlay.addEventListener("click", togglePause);
       muteButton.addEventListener("click", toggleMute);
 
-      // Handle window resize
       window.addEventListener("resize", function () {
         if (player) {
           const currentLeft = parseFloat(player.style.left || "50%");
           const containerWidth = gameContainer.clientWidth;
-          const playerWidth = player.clientWidth;
+          const playerWidth = player.offsetWidth;
 
-          // Ensure player stays within bounds on resize
+          // Pastikan player tetap dalam bounds saat resize
           let newLeft = currentLeft;
           if (newLeft < playerWidth / 2) newLeft = playerWidth / 2;
           if (newLeft > containerWidth - playerWidth / 2) {
             newLeft = containerWidth - playerWidth / 2;
           }
           player.style.left = `${newLeft}px`;
+
+          // Update posisi vertikal
+          player.style.bottom = "15vh";
         }
       });
     </script>
